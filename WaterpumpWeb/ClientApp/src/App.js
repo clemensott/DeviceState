@@ -116,7 +116,7 @@ export default class App extends Component {
         }
         
         return (
-            <div className="container">
+            <div className="app-container">
                 <h1 className="status" style={{ color: statusColor }}>{statusText}</h1>
                 <h2 className="update">{updateText}</h2>
                 <h2 className="temp">{tempText}</h2>
@@ -127,12 +127,12 @@ export default class App extends Component {
                 <div className="form">
                     Zeit(Minuten):
                     <div>
-                        <input ref={this.onTimeRef} type="number" value="5" className="time"></input>
+                        <input ref={this.onTimeRef} type="number" value="5" className="time form-control"></input>
                         <br />
-                        <span>
-                            <input type="button" value="Einschalten" className="turnonoff" onClick={this.turnOn}></input>
-                            <input type="button" value="Abschalten" className="turnonoff" onClick={this.turnOff}></input>
-                        </span>
+                        <div>
+                            <input type="button" value="Einschalten" className="btn bg-primary text-light turnonoff" onClick={this.turnOn}></input>
+                            <input type="button" value="Abschalten" className="btn bg-secondary text-light turnonoff" onClick={this.turnOff}></input>
+                        </div>
                     </div>
                 </div>
             </div>
