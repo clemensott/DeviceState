@@ -122,7 +122,7 @@ bool sendRequestSuccessful(String endpoint) {
         String payload = http.getString();
         Serial.println(payload);
 
-        return payload == "True";
+        return true;
       }
     } else {
       Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());

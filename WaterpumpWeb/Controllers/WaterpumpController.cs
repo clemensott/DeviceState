@@ -21,10 +21,14 @@ namespace WaterpumpWeb.Controllers
         }
 
         [HttpGet("on")]
-        public async Task<ActionResult> TurnOn([FromQuery] double? millis, [FromQuery] double? time)
+        public async Task<ActionResult> TurnOn([FromQuery] double? millis, [FromQuery] double? time, [FromQuery] int id)
         {
             Waterpump waterpump = await GetWaterpump();
-            if (millis.HasValue) await waterpump.TurnOn(TimeSpan.FromMilliseconds(millis.Value));
+            if (millis.HasValue)
+            {
+                TimeSpan onTime = millis < 0 ? TimeSpan.FromMinutes(5) : TimeSpan.FromMinutes(millis.Value);
+                await waterpump.TurnOn(onTime);
+            }
             else if (time.HasValue) await waterpump.TurnOn(TimeSpan.FromMinutes(time.Value));
             else await waterpump.TurnOn();
 
