@@ -17,7 +17,8 @@
 #ifndef STASSID
 #define STASSID "Ottspot"
 #define STAPSK  "PASSWORD"
-#define IP "192.168.1.110"
+#define IP "10.0.0.90"
+#define HOSTNAME "nas-server"
 #endif
 
 const int id = 96;
@@ -59,11 +60,12 @@ void loop() {
   if ((WiFiMulti.run() == WL_CONNECTED)) {
 
     WiFiClient client;
-
     HTTPClient http;
 
     String url = "http://";
-    url += IP;
+    // simplist way to implement call server via IP and Hostname
+    if (errorCount % 2 == 0) url += IP;
+    else url += HOSTNAME;
     url += "/wasserpumpe/ison?id=";
     url += String(id, DEC);
     url += "&errors=";

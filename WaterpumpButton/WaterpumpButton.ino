@@ -17,7 +17,8 @@
 #ifndef STASSID
 #define STASSID "Ottspot"
 #define STAPSK  "PASSWORD"
-#define IP "192.168.1.110"
+#define IP "10.0.0.90"
+#define HOSTNAME "nas-server"
 #define ID "57"
 #endif
 
@@ -64,15 +65,15 @@ void loop() {
 
   if (abs(millis() - startMillis) >= offMillis) {
     digitalWrite(ledPin, HIGH);
-    Serial.println("Off");
+    Serial.println("Try turn off");
 
     String endpoint = "on?id=";
     endpoint += ID;
     endpoint += "&millis=0";
 
-    while (!sendRequestSuccessful(endpoint)) delay(1000);
+    if (trySendRequest(endpoint, 20)) Serial.println("Turned off");
+    else Serial.println("Not turned off");
 
-    Serial.println("Offed");
     digitalWrite(ledPin, LOW);
     delay(100);
     digitalWrite(ledPin, HIGH);
@@ -81,25 +82,36 @@ void loop() {
   }
   else if (abs(millis() - startMillis) >= tapMillis) {
     digitalWrite(ledPin, HIGH);
-    Serial.println("Tap");
+    Serial.println("Try turn on");
 
     String endpoint = "on?id=";
     endpoint += ID;
     endpoint += "&millis=-1";
-    while (!sendRequestSuccessful(endpoint)) delay(1000);
-
-    Serial.println("Tapped");
+    
+    if (trySendRequest(endpoint, 20)) Serial.println("Turned on");
+    else Serial.println("Not turned on");
+    
     digitalWrite(ledPin, LOW);
   }
 }
 
-bool sendRequestSuccessful(String endpoint) {
+bool trySendRequest(String endpoint, int tryCount) {
+  for (int i = 0; i < tryCount; i++) {
+    String host = i % 2 == 0 ? IP : HOSTNAME;
+    if (sendRequestSuccessful(host, endpoint)) return true;
+    delay(1000);
+  }
+
+  return false;
+}
+
+bool sendRequestSuccessful(String host, String endpoint) {
   if ((WiFiMulti.run() != WL_CONNECTED)) return false;
 
   WiFiClient client;
   HTTPClient http;
   String url = "http://";
-  url += IP;
+  url += host;
   url += "/wasserpumpe/";
   url += endpoint;
   Serial.println(url);
