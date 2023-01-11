@@ -22,13 +22,13 @@ namespace WaterpumpWeb.Models
             return instance;
         }
 
-        public bool IsOn => IsForeverOn || DateTime.Now < IsOnUntil;
+        public bool IsOn => IsForeverOn || DateTime.UtcNow < IsOnUntil;
 
         public bool IsForeverOn { get; private set; }
 
         public DateTime IsOnUntil { get; private set; }
 
-        public TimeSpan Remaining => IsOnUntil - DateTime.Now;
+        public TimeSpan Remaining => IsOnUntil - DateTime.UtcNow;
 
         public Waterpump()
         {
@@ -54,7 +54,7 @@ namespace WaterpumpWeb.Models
         public Task TurnOn(TimeSpan time)
         {
             IsForeverOn = false;
-            IsOnUntil = DateTime.Now + time;
+            IsOnUntil = DateTime.UtcNow + time;
 
             return UpdateDatabase();
         }

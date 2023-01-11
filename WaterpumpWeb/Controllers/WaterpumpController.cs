@@ -90,7 +90,7 @@ namespace WaterpumpWeb.Controllers
         {
             Waterpump waterpump = await GetWaterpump();
             double remainingOnMillis = waterpump.Remaining.TotalMilliseconds;
-            IsOnRequest[] requestsWithID = await GetIsOnRequests(deviceId);
+            IsOnRequest[] requestsWithID = await GetIsOnRequests(deviceId, TimeSpan.FromSeconds(15));
 
             if (requestsWithID.Length == 0)
             {
@@ -98,19 +98,17 @@ namespace WaterpumpWeb.Controllers
             }
 
             IsOnRequest request = requestsWithID.First();
-
-            IsOnRequest[] requestsWithIdAndTemp = requestsWithID.Where(r => r.RawTemp != -1 && (DateTime.Now - r.Created).TotalSeconds < 15).ToArray();
-            double averageRawTemp = requestsWithIdAndTemp.Length > 0 ? requestsWithIdAndTemp.Average(r => r.RawTemp.Value) : -1;
+            double averageRawTemp = requestsWithID.Average(r => r.RawTemp.Value);
 
             bool? isOn = request.PumpState.HasValue ? (bool?)(request.PumpState != 0) : null;
-            double lastUpdateMillisAgo = (DateTime.Now - request.Created).TotalMilliseconds;
+            double lastUpdateMillisAgo = (DateTime.UtcNow - request.Created).TotalMilliseconds;
             Temperature temp = await GetTemp(averageRawTemp);
 
             return new PumpState(isOn, remainingOnMillis, lastUpdateMillisAgo, temp);
         }
 
 
-        private async static Task<IsOnRequest[]> GetIsOnRequests(int? deviceId)
+        private async static Task<IsOnRequest[]> GetIsOnRequests(int? deviceId, TimeSpan last)
         {
             string sql;
             KeyValuePair<string, object>[] parameters;
@@ -121,11 +119,12 @@ namespace WaterpumpWeb.Controllers
                 @"
                     SELECT id, device_id, error_count, pump_state, raw_temp, response, created
                     FROM is_on_requests
-                    WHERE device_id = @deviceId AND raw_temp IS NOT NULL
+                    WHERE device_id = @deviceId AND raw_temp IS NOT NULL AND JULIANDAY(created) > JULIANDAY('now', @last)
                     ORDER BY created DESC;
                 ";
                 parameters = new KeyValuePair<string, object>[] {
                     new KeyValuePair<string, object>("@deviceId", deviceId),
+                    new KeyValuePair<string, object>("@last", $"{-last.TotalSeconds } seconds"),
                 };
             }
             else
@@ -134,10 +133,12 @@ namespace WaterpumpWeb.Controllers
                 @"
                     SELECT id, device_id, error_count, pump_state, raw_temp, response, created
                     FROM is_on_requests
-                    WHERE raw_temp IS NOT NULL
+                    WHERE raw_temp IS NOT NULL AND JULIANDAY(created) > JULIANDAY('now', @last)
                     ORDER BY created DESC;
                 ";
-                parameters = null;
+                parameters = new KeyValuePair<string, object>[] {
+                    new KeyValuePair<string, object>("@last", $"{-last.TotalSeconds } seconds"),
+                };
             }
 
             return (await DbHelper.ExecuteReadAllAsync(sql, parameters))

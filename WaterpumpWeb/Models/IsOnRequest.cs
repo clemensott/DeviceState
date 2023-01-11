@@ -21,7 +21,7 @@ namespace WaterpumpWeb.Models
 
         public IsOnRequest(int? deviceId, int? errorCount, int? pumpState, int? rawTemp, bool response) : this()
         {
-            Created = DateTime.Now;
+            Created = DateTime.UtcNow;
             DeviceId = deviceId;
             ErrorCount = errorCount;
             PumpState = pumpState;
