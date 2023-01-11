@@ -11,6 +11,7 @@ namespace WaterpumpWeb.Controllers
     [Route("wasserpumpe")]
     public class WaterpumpController : Controller
     {
+        private static string[] tempPointLines = System.IO.File.ReadAllLines(@"TempPoints.txt");
         private static Waterpump waterpump;
 
         private static async Task<Waterpump> GetWaterpump()
@@ -102,7 +103,7 @@ namespace WaterpumpWeb.Controllers
 
             bool? isOn = request.PumpState.HasValue ? (bool?)(request.PumpState != 0) : null;
             double lastUpdateMillisAgo = (DateTime.UtcNow - request.Created).TotalMilliseconds;
-            Temperature temp = await GetTemp(averageRawTemp);
+            Temperature temp = GetTemp(averageRawTemp);
 
             return new PumpState(isOn, remainingOnMillis, lastUpdateMillisAgo, temp);
         }
@@ -145,15 +146,14 @@ namespace WaterpumpWeb.Controllers
                 .Select(IsOnRequest.FromDataRecord).ToArray();
         }
 
-        private static async Task<Temperature> GetTemp(double rawTemp)
+        private static Temperature GetTemp(double rawTemp)
         {
             if (rawTemp < 0) return Temperature.Empty;
 
             try
             {
                 double lineVoltage = -1, lineTemp = -1;
-                string[] lines = await System.IO.File.ReadAllLinesAsync(@"TempPoints.txt");
-                (double raw, double temp)[] tuples = lines.Where(l => IsTempPointLine(l, out lineVoltage, out lineTemp))
+                (double raw, double temp)[] tuples = tempPointLines.Where(l => IsTempPointLine(l, out lineVoltage, out lineTemp))
                     .Select(l => (raw: lineVoltage, temp: lineTemp)).OrderBy(t => t.raw).ToArray();
 
                 if (tuples.Select(t => t.raw).Distinct().Count() < 2) return Temperature.Empty;
