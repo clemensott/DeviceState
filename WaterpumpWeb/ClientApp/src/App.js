@@ -125,9 +125,9 @@ export default class App extends Component {
                 <br />
                 <br />
                 <div className="form">
-                    Zeit(Minuten):
+                    Zeit (Minuten):
                     <div>
-                        <input ref={this.onTimeRef} type="number" value="5" className="time form-control"></input>
+                        <input ref={this.onTimeRef} type="number" defaultValue="5" className="time form-control"></input>
                         <br />
                         <div>
                             <input type="button" value="Einschalten" className="btn bg-primary text-light turnonoff" onClick={this.turnOn}></input>
