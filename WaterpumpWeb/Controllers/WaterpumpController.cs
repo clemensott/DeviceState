@@ -11,7 +11,6 @@ namespace WaterpumpWeb.Controllers
     [Route("wasserpumpe")]
     public class WaterpumpController : Controller
     {
-        private static string[] tempPointLines = System.IO.File.ReadAllLines(@"TempPoints.txt");
         private static Waterpump waterpump;
 
         private static async Task<Waterpump> GetWaterpump()
@@ -103,7 +102,7 @@ namespace WaterpumpWeb.Controllers
 
             bool? isOn = request.PumpState.HasValue ? (bool?)(request.PumpState != 0) : null;
             double lastUpdateMillisAgo = (DateTime.UtcNow - request.Created).TotalMilliseconds;
-            Temperature temp = GetTemp(averageRawTemp);
+            Temperature temp = TemperatureConverter.Convert(averageRawTemp);
 
             return new PumpState(isOn, remainingOnMillis, lastUpdateMillisAgo, temp);
         }
@@ -116,8 +115,7 @@ namespace WaterpumpWeb.Controllers
 
             if (deviceId.HasValue)
             {
-                sql =
-                @"
+                sql = @"
                     SELECT id, device_id, error_count, pump_state, raw_temp, response, created
                     FROM is_on_requests
                     WHERE device_id = @deviceId AND raw_temp IS NOT NULL AND JULIANDAY(created) > JULIANDAY('now', @last)
@@ -125,13 +123,12 @@ namespace WaterpumpWeb.Controllers
                 ";
                 parameters = new KeyValuePair<string, object>[] {
                     new KeyValuePair<string, object>("@deviceId", deviceId),
-                    new KeyValuePair<string, object>("@last", $"{-last.TotalSeconds } seconds"),
+                    new KeyValuePair<string, object>("@last", $"{-last.TotalSeconds} seconds"),
                 };
             }
             else
             {
-                sql =
-                @"
+                sql = @"
                     SELECT id, device_id, error_count, pump_state, raw_temp, response, created
                     FROM is_on_requests
                     WHERE raw_temp IS NOT NULL AND JULIANDAY(created) > JULIANDAY('now', @last)
@@ -145,43 +142,5 @@ namespace WaterpumpWeb.Controllers
             return (await DbHelper.ExecuteReadAllAsync(sql, parameters))
                 .Select(IsOnRequest.FromDataRecord).ToArray();
         }
-
-        private static Temperature GetTemp(double rawTemp)
-        {
-            if (rawTemp < 0) return Temperature.Empty;
-
-            try
-            {
-                double lineVoltage = -1, lineTemp = -1;
-                (double raw, double temp)[] tuples = tempPointLines.Where(l => IsTempPointLine(l, out lineVoltage, out lineTemp))
-                    .Select(l => (raw: lineVoltage, temp: lineTemp)).OrderBy(t => t.raw).ToArray();
-
-                if (tuples.Select(t => t.raw).Distinct().Count() < 2) return Temperature.Empty;
-
-                if (!tuples.Any(t => t.raw <= rawTemp)) return Temperature.FromSmallerThan(tuples.Min(t => t.temp));
-                if (!tuples.Any(t => t.raw > rawTemp)) return Temperature.FromGreaterThan(tuples.Max(t => t.temp));
-
-                (double beforeVoltage, double beforeTemp) = tuples.Last(t => t.raw <= rawTemp);
-                (double afterVoltage, double afterTemp) = tuples.First(t => t.raw > rawTemp);
-                double relVoltage = (rawTemp - beforeVoltage) / (afterVoltage - beforeVoltage);
-
-                return Temperature.FromValue((afterTemp - beforeTemp) * relVoltage + beforeTemp);
-            }
-            catch
-            {
-                return Temperature.Empty;
-            }
-        }
-
-        private static bool IsTempPointLine(string line, out double raw, out double temp)
-        {
-            raw = -1;
-            temp = -1;
-
-            string[] parts = line.Split('=');
-
-            return parts.Length == 2 && double.TryParse(parts[0], out raw) && double.TryParse(parts[1], out temp);
-        }
-
     }
 }

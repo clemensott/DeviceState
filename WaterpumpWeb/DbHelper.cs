@@ -9,7 +9,6 @@ namespace WaterpumpWeb
     public static class DbHelper
     {
         private const string dbConnectionString = @"Data Source=waterpump.db";
-        //private const string dbConnectionString = @"Data Source=Y:\Portable\WaterpumpV2\waterpump.db";
 
         private static SqliteConnection connection;
 
