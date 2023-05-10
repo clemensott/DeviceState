@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import "./App.css"
+import getBackgroundStyle from './getBackgroundStyle';
 
 export default class App extends Component {
 
@@ -177,5 +178,7 @@ export default class App extends Component {
         setInterval(async () => {
             await this.fetchState();
         }, 1000);
+
+        Object.assign(document.body.style, getBackgroundStyle());
     }
 }
