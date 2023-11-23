@@ -1,0 +1,34 @@
+﻿
+.status {
+    font-size: 7rem
+}
+
+.update {
+    font-size: 4.5rem
+}
+
+.value {
+    font-size: 4.5rem
+}
+
+.countdown {
+    font-size: 6.5rem
+}
+
+@media (max-device-width: 500px) {
+    .status {
+        font-size: 3rem
+    }
+
+    .update {
+        font-size: 2rem
+    }
+
+    .value {
+        font-size: 2rem
+    }
+
+    .countdown {
+        font-size: 2.5rem
+    }
+}

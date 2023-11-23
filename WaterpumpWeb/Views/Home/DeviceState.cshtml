@@ -1,0 +1,82 @@
+﻿@using WaterpumpWeb.Models;
+@using WaterpumpWeb.Utils;
+@model DeviceStateModel
+@{
+    DateTime now = DateTime.UtcNow;
+
+    string statusText;
+    string statusColor;
+    if (!Model.IsOn.HasValue)
+    {
+        statusText = "Status ist unbekannt.";
+        statusColor = "black";
+    }
+    else if (Model.IsOn == false)
+    {
+        statusText = $"{Model.Name} ist ausgeschalten.";
+        statusColor = "blue";
+    }
+    else if (!Model.LastUpdate.HasValue ||
+        (now - Model.LastUpdate) > TimeSpan.FromSeconds(60))
+    {
+        statusText = $"{Model.Name} ist wahrscheinlich ausgeschalten.";
+        statusColor = "blue";
+    }
+    else
+    {
+        statusText = $"{Model.Name} ist eingeschalten.";
+        statusColor = "green";
+    }
+
+    string valueText = "";
+    if (!Model.Value.HasValue)
+    {
+        valueText = $"Keine {Model.Value.Name} bekannt.";
+    }
+    else if (Model.Value.Type == CompareType.Equal)
+    {
+        valueText = $"Temperatur: {Model.Value.Value:F1} °C";
+    }
+    else if (Model.Value.Type == CompareType.SmallerThan)
+    {
+        valueText = $"Temperatur: < {Model.Value.Value:F1} °C";
+    }
+    else if (Model.Value.Type == CompareType.GreaterThan)
+    {
+        valueText = $"Temperatur: > {Model.Value.Value:F1} °C";
+    }
+}
+
+<div hx-get="/htmx/deviceState?id=@Model.Id&maxWaitMillis=9500"
+     hx-trigger="load delay:50ms"
+     hx-swap="outerHTML">
+    <h1 class="status" style="color: @statusColor;">@statusText</h1>
+    @{
+        if (Model.LastUpdate.HasValue)
+        {
+            string fromText = Model.LastUpdate.Value.ToString("O");
+            string timeSpan = FormatUtils.FormatTimeSpan(now - Model.LastUpdate.Value);
+            <h2 class="update">
+                Letztes Update vor:
+                @await Html.PartialAsync("CountTime", new CountTimeModel(Model.LastUpdate, null))
+            </h2>
+        }
+        else
+        {
+            <h2 class="update">Kein Update bekannt.</h2>
+        }
+    }
+    <h2 class="value">@valueText</h2>
+    @{
+        if (Model.IsForeverOn && Model.IsOn != true)
+        {
+            <h1 class="countdown">Einschaltsignal gegeben</h1>
+        }
+        else if (!Model.IsForeverOn && Model.OnUntil > now)
+        {
+            <h1 class="countdown">
+                @await Html.PartialAsync("CountTime", new CountTimeModel(null, Model.OnUntil))
+            </h1>
+        }
+    }
+</div>

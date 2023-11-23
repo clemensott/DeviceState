@@ -1,0 +1,30 @@
+﻿@using WaterpumpWeb.Utils;
+@model CountTimeModel
+@{
+    string fromText = Model.From?.ToString("O") ?? string.Empty;
+    string toText = Model.To?.ToString("O") ?? string.Empty;
+
+    TimeSpan timeSpan;
+    if (Model.From.HasValue)
+    {
+        timeSpan = DateTime.UtcNow - Model.From.Value;
+    }
+    else if (Model.To.HasValue)
+    {
+        timeSpan = Model.To.Value - DateTime.UtcNow;
+    }
+    else timeSpan = TimeSpan.MinValue;
+
+    if (timeSpan < TimeSpan.Zero)
+    {
+        <span />
+    }
+    else
+    {
+        <span hx-get="/htmx/countTime?from=@fromText&to=@toText"
+              hx-trigger="load delay:900ms"
+              hx-swap="outerHTML">
+            @FormatUtils.FormatTimeSpan(timeSpan)
+        </span>
+    }
+}

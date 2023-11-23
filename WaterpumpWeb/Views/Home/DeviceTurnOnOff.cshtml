@@ -1,0 +1,29 @@
+﻿@model DeviceTurnOnOffModel
+<form class="form"
+      hx-get="/api/device/on"
+      hx-swap="none"
+      hx-disabled-elt="#on-btn">
+    Zeit (Minuten):
+    <div>
+        <input type="number"
+               class="time form-control"
+               name="time"
+               min="0"
+               value="@Model.DefaultValue">
+        <br>
+        <div>
+            <button type="submit"
+                    id="on-btn"
+                    class="btn bg-primary text-light turnonoff">
+                Einschalten
+            </button>
+            <button type="button"
+                    class="btn bg-secondary text-light turnonoff"
+                    hx-get="/api/device/off"
+                    hx-swap="none"
+                    hx-disabled-elt="this">
+                Abschalten
+            </button>
+        </div>
+    </div>
+</form>

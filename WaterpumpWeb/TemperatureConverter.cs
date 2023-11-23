@@ -37,34 +37,33 @@ namespace WaterpumpWeb
                 string[] lines = System.IO.File.ReadAllLines(@"TempPoints.txt");
                 tempPoints = lines.Select(IsTempPointLine)
                     .OfType<TemperatureMapPoint>()
-                    .OrderBy(t=>t.Measure)
+                    .OrderBy(t => t.Measure)
                     .ToArray();
             }
             return tempPoints;
         }
 
-        public static Temperature Convert(double measure)
+        public static TransformedValue Convert(string name, double measure)
         {
-            if (measure < 0) return Temperature.Empty;
-
             try
             {
                 TemperatureMapPoint[] tempPoints = GetTemperatureMapPoints();
 
-                if (tempPoints.Select(t => t.Measure).Distinct().Count() < 2) return Temperature.Empty;
+                if (tempPoints.Select(t => t.Measure).Distinct().Count() < 2) return TransformedValue.Empty(name);
 
-                if (!tempPoints.Any(t => t.Measure <= measure)) return Temperature.FromSmallerThan(tempPoints.Min(t => t.Temperature));
-                if (!tempPoints.Any(t => t.Measure > measure)) return Temperature.FromGreaterThan(tempPoints.Max(t => t.Temperature));
+                if (!tempPoints.Any(t => t.Measure <= measure)) return TransformedValue.FromSmallerThan(name, tempPoints.Min(t => t.Temperature));
+                if (!tempPoints.Any(t => t.Measure > measure)) return TransformedValue.FromGreaterThan(name, tempPoints.Max(t => t.Temperature));
 
                 TemperatureMapPoint beforePoint = tempPoints.Last(t => t.Measure <= measure);
                 TemperatureMapPoint afterPoint = tempPoints.First(t => t.Measure > measure);
                 double relMeasure = (measure - beforePoint.Measure) / (afterPoint.Measure - beforePoint.Measure);
+                double resultValue = (afterPoint.Temperature - beforePoint.Temperature) * relMeasure + beforePoint.Temperature;
 
-                return Temperature.FromValue((afterPoint.Temperature - beforePoint.Temperature) * relMeasure + beforePoint.Temperature);
+                return TransformedValue.FromValue(name, resultValue);
             }
             catch
             {
-                return Temperature.Empty;
+                return TransformedValue.Empty(name);
             }
         }
     }

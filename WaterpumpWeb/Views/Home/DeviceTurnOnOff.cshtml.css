@@ -1,0 +1,23 @@
+﻿.form {
+    font-size: 4rem
+}
+
+.turnonoff {
+    display: inline;
+    margin: 5px;
+    font-size: 75%
+}
+
+.time {
+    display: initial;
+    width: initial;
+    margin: 5px;
+    font-size: 75%;
+    text-align: center
+}
+
+@media (max-device-width: 500px) {
+    .form {
+        font-size: 1.7rem
+    }
+}

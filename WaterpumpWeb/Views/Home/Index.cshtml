@@ -1,0 +1,12 @@
+﻿@model HomeModel
+@{
+    Layout = "_Layout";
+}
+
+<div class="app-container">
+    @await Html.PartialAsync("DeviceState", Model.DeviceState)
+    <br>
+    <br>
+    <br>
+    @await Html.PartialAsync("DeviceTurnOnOff", Model.DeviceTurnOnOff)
+</div>
