@@ -1,30 +1,85 @@
 ﻿@using WaterpumpWeb.Utils;
 @model CountTimeModel
 @{
-    string fromText = Model.From?.ToString("O") ?? string.Empty;
-    string toText = Model.To?.ToString("O") ?? string.Empty;
+    string fromText = string.Empty;
+    string toText = string.Empty;
 
-    TimeSpan timeSpan;
+    TimeSpan? timeSpan = null;
     if (Model.From.HasValue)
     {
+        fromText = ((long)(Model.From.Value - DateTime.UnixEpoch).TotalMilliseconds).ToString();
         timeSpan = DateTime.UtcNow - Model.From.Value;
     }
     else if (Model.To.HasValue)
     {
+        toText = ((long)(Model.To.Value - DateTime.UnixEpoch).TotalMilliseconds).ToString();
         timeSpan = Model.To.Value - DateTime.UtcNow;
     }
-    else timeSpan = TimeSpan.MinValue;
 
-    if (timeSpan < TimeSpan.Zero)
-    {
-        <span />
-    }
-    else
-    {
-        <span hx-get="/htmx/countTime?from=@fromText&to=@toText"
-              hx-trigger="load delay:900ms"
-              hx-swap="outerHTML">
-            @FormatUtils.FormatTimeSpan(timeSpan)
-        </span>
-    }
+    string initText = timeSpan.HasValue ? FormatUtils.FormatTimeSpan(timeSpan.Value) : string.Empty;
 }
+
+<span>
+    <span id="content">@initText</span>
+    <input id="from" type="hidden" value="@fromText" />
+    <input id="to" type="hidden" value="@toText" />
+
+    <script>
+        (function () {
+            function formatTimeSpan(millis) {
+                // Time calculations for days, hours, minutes and seconds
+                var days = Math.floor(millis / (1000 * 60 * 60 * 24));
+                var hours = Math.floor((millis % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                var minutes = Math.floor((millis % (1000 * 60 * 60)) / (1000 * 60));
+                var seconds = Math.floor((millis % (1000 * 60)) / 1000);
+
+                var timeText = "";
+                if (days > 0) timeText += days + "d ";
+                if (days > 0 || hours > 0) timeText += hours + "h ";
+                if (days > 0 || hours > 0 || minutes > 0) timeText += minutes + "m ";
+                timeText += seconds + "s ";
+
+                return timeText;
+            }
+
+            function getElement(selector) {
+                return document.currentScript?.parentElement?.querySelector(selector);
+            }
+
+            function getValue(selector) {
+                const element = getElement(selector);
+                const unixMillis = Number.parseInt(element?.value, 10);
+                return unixMillis ? new Date(unixMillis) : null;
+            }
+
+            const content = getElement('#content')
+            const from = getValue('#from');
+            const to = getValue('#to');
+
+            let getMillis = null;
+            if (from) {
+                getMillis = () => Date.now() - from;
+            } else if (to) {
+                getMillis = () => to - Date.now();
+            }
+
+            function isRemoved() {
+                return !document.contains(content);
+            }
+
+            function updateContent() {
+                const millis = getMillis();
+                content.innerText = formatTimeSpan(millis);
+                return millis > 0;
+            }
+
+            if (getMillis) {
+                const intervalId = setInterval(() => {
+                    if (isRemoved() || !updateContent()) {
+                        clearInterval(intervalId);
+                    }
+                }, 200);
+            }
+        })();
+    </script>
+</span>
