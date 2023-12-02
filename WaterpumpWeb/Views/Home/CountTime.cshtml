@@ -19,67 +19,52 @@
     string initText = timeSpan.HasValue ? FormatUtils.FormatTimeSpan(timeSpan.Value) : string.Empty;
 }
 
-<span>
-    <span id="content">@initText</span>
-    <input id="from" type="hidden" value="@fromText" />
-    <input id="to" type="hidden" value="@toText" />
+<span data-from="@fromText" data-to="@toText">@initText</span>
+<script>
+    (function () {
+        function formatTimeSpan(millis) {
+            // Time calculations for days, hours, minutes and seconds
+            var days = Math.floor(millis / (1000 * 60 * 60 * 24));
+            var hours = Math.floor((millis % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((millis % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((millis % (1000 * 60)) / 1000);
 
-    <script>
-        (function () {
-            function formatTimeSpan(millis) {
-                // Time calculations for days, hours, minutes and seconds
-                var days = Math.floor(millis / (1000 * 60 * 60 * 24));
-                var hours = Math.floor((millis % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                var minutes = Math.floor((millis % (1000 * 60 * 60)) / (1000 * 60));
-                var seconds = Math.floor((millis % (1000 * 60)) / 1000);
+            var timeText = "";
+            if (days > 0) timeText += days + "d ";
+            if (days > 0 || hours > 0) timeText += hours + "h ";
+            if (days > 0 || hours > 0 || minutes > 0) timeText += minutes + "m ";
+            timeText += seconds + "s ";
 
-                var timeText = "";
-                if (days > 0) timeText += days + "d ";
-                if (days > 0 || hours > 0) timeText += hours + "h ";
-                if (days > 0 || hours > 0 || minutes > 0) timeText += minutes + "m ";
-                timeText += seconds + "s ";
+            return timeText;
+        }
 
-                return timeText;
-            }
+        const content = document.currentScript.previousElementSibling;
+        const from = content.dataset.from;
+        const to = content.dataset.to;
 
-            function getElement(selector) {
-                return document.currentScript?.parentElement?.querySelector(selector);
-            }
+        let getMillis = null;
+        if (from) {
+            getMillis = () => Date.now() - from;
+        } else if (to) {
+            getMillis = () => to - Date.now();
+        }
 
-            function getValue(selector) {
-                const element = getElement(selector);
-                const unixMillis = Number.parseInt(element?.value, 10);
-                return unixMillis ? new Date(unixMillis) : null;
-            }
+        function isRemoved() {
+            return !document.contains(content);
+        }
 
-            const content = getElement('#content')
-            const from = getValue('#from');
-            const to = getValue('#to');
+        function updateContent() {
+            const millis = getMillis();
+            content.innerText = formatTimeSpan(millis);
+            return millis > 0;
+        }
 
-            let getMillis = null;
-            if (from) {
-                getMillis = () => Date.now() - from;
-            } else if (to) {
-                getMillis = () => to - Date.now();
-            }
-
-            function isRemoved() {
-                return !document.contains(content);
-            }
-
-            function updateContent() {
-                const millis = getMillis();
-                content.innerText = formatTimeSpan(millis);
-                return millis > 0;
-            }
-
-            if (getMillis) {
-                const intervalId = setInterval(() => {
-                    if (isRemoved() || !updateContent()) {
-                        clearInterval(intervalId);
-                    }
-                }, 200);
-            }
-        })();
-    </script>
-</span>
+        if (getMillis) {
+            const intervalId = setInterval(() => {
+                if (isRemoved() || !updateContent()) {
+                    clearInterval(intervalId);
+                }
+            }, 200);
+        }
+    })();
+</script>
