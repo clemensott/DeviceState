@@ -10,12 +10,14 @@ namespace WaterpumpWeb.Services.Devices
     public class DevicesService : IDevicesService
     {
         private readonly string defaultDeviceId;
+        private readonly TimeSpan actorOnlineTolerance;
         private readonly IDevicesEvents devicesEvents;
         private readonly IDeviceRepo deviceRepo;
 
         public DevicesService(IAppConfiguration appConfiguration, IDevicesEvents devicesEvents, IDeviceRepo deviceRepo)
         {
             defaultDeviceId = appConfiguration.DefaultDeviceId;
+            actorOnlineTolerance = appConfiguration.ActorOnlineTolerance;
             this.devicesEvents = devicesEvents;
             this.deviceRepo = deviceRepo;
         }
@@ -44,7 +46,12 @@ namespace WaterpumpWeb.Services.Devices
 
             int? lastState = measurements.FirstOrDefault(m => m.State.HasValue).State;
             bool? isOn = lastState.HasValue ? lastState == 1 : null;
-            DateTime? lastUpdate = measurements.Length > 0 ? measurements[0].Created : null;
+
+            DeviceActorOnline actorOnline = devicesEvents.GetLastActorUpdate(id);
+            DateTime? actorOnlineLastUpdate = actorOnline.LastUpdate ?? device.LasteActorUpdate;
+            bool actorIsOnline = actorOnline.IsOnline || (actorOnlineLastUpdate.HasValue
+                && DateTime.UtcNow - actorOnlineLastUpdate < actorOnlineTolerance);
+            actorOnline = new DeviceActorOnline(actorIsOnline, actorOnlineLastUpdate);
 
             double[] measurementValues = measurements.Select(m => m.Value).OfType<double>().ToArray();
             TransformedValue transformedValue;
@@ -55,8 +62,8 @@ namespace WaterpumpWeb.Services.Devices
             }
             else transformedValue = TransformedValue.Empty(device.ValueName);
 
-            return new DeviceState(id, device.Name, isOn, device.IsForeverOn, 
-                device.OnUntil, lastUpdate, transformedValue);
+            DeviceOnState onState = new DeviceOnState(device.IsForeverOn, device.OnUntil, isOn);
+            return new DeviceState(id, device.Name, onState, actorOnline, transformedValue);
         }
 
         public async Task<bool> SetMeasurements(string id, int? errors, int? state, int? value, TimeSpan? maxWaitTime)
@@ -66,24 +73,29 @@ namespace WaterpumpWeb.Services.Devices
             DeviceMeasurement measurement = new DeviceMeasurement(id, errors, state, value);
 
             await deviceRepo.SetMeasurement(measurement);
-            devicesEvents.TriggerStateChange(id);
-
-
-            if (maxWaitTime.HasValue)
-            {
-                await devicesEvents.WaitForStateChange(id, maxWaitTime.Value);
-            }
+            await deviceRepo.SetLastActorUpdate(id, DateTime.UtcNow);
 
             Device device = await deviceRepo.GetDevice(id);
             bool isOn = device.IsOn();
+            if (state.HasValue && (state == 0) ^ isOn && maxWaitTime.HasValue)
+            {
+                if (await devicesEvents.ActorWaitForStateChange(id, maxWaitTime.Value))
+                {
+                    device = await deviceRepo.GetDevice(id);
+                    isOn = device.IsOn();
+                }
 
+                await deviceRepo.SetLastActorUpdate(id, DateTime.UtcNow);
+            }
+
+            devicesEvents.TriggerStateChange(id);
             return isOn;
         }
 
         public async Task TurnOff(string id)
         {
             id ??= defaultDeviceId;
-            await deviceRepo.SetDeviceOnState(id, new DeviceOnState(false, DateTime.MinValue));
+            await deviceRepo.SetDeviceOnState(id, new DeviceDesiredOnState(false, DateTime.MinValue));
             devicesEvents.TriggerStateChange(id);
         }
 
@@ -91,18 +103,18 @@ namespace WaterpumpWeb.Services.Devices
         {
             id ??= defaultDeviceId;
 
-            DeviceOnState onState;
+            DeviceDesiredOnState onState;
             if (millis.HasValue)
             {
                 TimeSpan onTime = millis < 0 ? TimeSpan.Zero : TimeSpan.FromMilliseconds(millis.Value);
-                onState = new DeviceOnState(false, DateTime.UtcNow + onTime);
+                onState = new DeviceDesiredOnState(false, DateTime.UtcNow + onTime);
             }
             else if (minutes.HasValue)
             {
                 TimeSpan onTime = millis < 0 ? TimeSpan.Zero : TimeSpan.FromMinutes(minutes.Value);
-                onState = new DeviceOnState(false, DateTime.UtcNow + onTime);
+                onState = new DeviceDesiredOnState(false, DateTime.UtcNow + onTime);
             }
-            else onState = new DeviceOnState(true, DateTime.MaxValue);
+            else onState = new DeviceDesiredOnState(true, DateTime.MaxValue);
 
             bool hasDevice = await deviceRepo.SetDeviceOnState(id, onState);
             if (!hasDevice) throw new DeviceNotFoundException(id);

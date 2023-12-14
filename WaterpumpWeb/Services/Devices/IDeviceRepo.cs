@@ -8,7 +8,9 @@ namespace WaterpumpWeb.Services.Devices
     {
         Task<Device> GetDevice(string id);
 
-        Task<bool> SetDeviceOnState(string id, DeviceOnState onState);
+        Task<bool> SetDeviceOnState(string id, DeviceDesiredOnState onState);
+
+        Task SetLastActorUpdate(string id, DateTime lastActorUpdate);
 
         Task<DeviceMeasurement[]> GetMeasurements(string id, TimeSpan last);
 

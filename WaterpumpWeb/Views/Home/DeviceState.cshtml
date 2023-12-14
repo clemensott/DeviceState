@@ -3,21 +3,22 @@
 @model DeviceStateModel
 @{
     DateTime now = DateTime.UtcNow;
+    DeviceActorOnline actorOnline = Model.ActoOnline;
 
     string statusText;
     string statusColor;
-    if (!Model.IsOn.HasValue)
+    if (!Model.OnState.IsOn.HasValue)
     {
         statusText = "Status ist unbekannt.";
         statusColor = "black";
     }
-    else if (Model.IsOn == false)
+    else if (Model.OnState.IsOn == false)
     {
         statusText = $"{Model.Name} ist ausgeschalten.";
         statusColor = "blue";
     }
-    else if (!Model.LastUpdate.HasValue ||
-        (now - Model.LastUpdate) > TimeSpan.FromSeconds(60))
+    else if (!actorOnline.LastUpdate.HasValue ||
+        (now - actorOnline.LastUpdate) > TimeSpan.FromSeconds(60))
     {
         statusText = $"{Model.Name} ist wahrscheinlich ausgeschalten.";
         statusColor = "blue";
@@ -33,17 +34,15 @@
     {
         valueText = $"Keine {Model.Value.Name} bekannt.";
     }
-    else if (Model.Value.Type == CompareType.Equal)
+    else
     {
-        valueText = $"Temperatur: {Model.Value.Value:F1} °C";
-    }
-    else if (Model.Value.Type == CompareType.SmallerThan)
-    {
-        valueText = $"Temperatur: < {Model.Value.Value:F1} °C";
-    }
-    else if (Model.Value.Type == CompareType.GreaterThan)
-    {
-        valueText = $"Temperatur: > {Model.Value.Value:F1} °C";
+        string typeOperator = Model.Value.Type switch
+        {
+            CompareType.SmallerThan => "< ",
+            CompareType.GreaterThan => "> ",
+            _ => string.Empty,
+        };
+        valueText = $"{Model.Value.Name}: {typeOperator}{Model.Value.Value:F1} °C";
     }
 }
 
@@ -51,32 +50,34 @@
      hx-trigger="load delay:50ms"
      hx-swap="outerHTML">
     <h1 class="status" style="color: @statusColor;">@statusText</h1>
-    @{
-        if (Model.LastUpdate.HasValue)
-        {
-            string fromText = Model.LastUpdate.Value.ToString("O");
-            string timeSpan = FormatUtils.FormatTimeSpan(now - Model.LastUpdate.Value);
-            <h2 class="update">
-                Letztes Update vor:
-                @await Html.PartialAsync("CountTime", new CountTimeModel(Model.LastUpdate, null))
-            </h2>
+    <h2 class="update">
+        @{
+            if (actorOnline.IsOnline)
+            {
+                @:Ist Online.
+            }
+            else if (actorOnline.LastUpdate.HasValue)
+            {
+                @:Letztes Update vor:
+                await Html.RenderPartialAsync("CountTime", new CountTimeModel(actorOnline.LastUpdate, null));
+            }
+            else
+            {
+                @:Kein Update bekannt.
+            }
         }
-        else
-        {
-            <h2 class="update">Kein Update bekannt.</h2>
-        }
-    }
+    </h2>
     <h2 class="value">@valueText</h2>
-    @{
-        if (Model.IsForeverOn && Model.IsOn != true)
-        {
-            <h1 class="countdown">Einschaltsignal gegeben</h1>
+    <h1 class="countdown">
+        @{
+            if (Model.OnState.IsForeverOn && Model.OnState.IsOn != true)
+            {
+                @:Einschaltsignal gegeben
+            }
+            else if (!Model.OnState.IsForeverOn && Model.OnState.OnUntil > now)
+            {
+                await Html.RenderPartialAsync("CountTime", new CountTimeModel(null, Model.OnState.OnUntil));
+            }
         }
-        else if (!Model.IsForeverOn && Model.OnUntil > now)
-        {
-            <h1 class="countdown">
-                @await Html.PartialAsync("CountTime", new CountTimeModel(null, Model.OnUntil))
-            </h1>
-        }
-    }
+    </h1>
 </div>

@@ -27,8 +27,7 @@ namespace WaterpumpWeb.Controllers
         {
             TimeSpan? maxWaitTime = maxWaitMillis.HasValue ? TimeSpan.FromMilliseconds(maxWaitMillis.Value) : null;
             DeviceState state = await devicesService.GetState(id, maxWaitTime);
-            return new DeviceStateModel(state.Id, state.Name, state.IsOn,
-                state.IsForeverOn, state.OnUntil, state.LastUpdate, state.Value);
+            return new DeviceStateModel(state.Id, state.Name, state.OnState, state.ActoOnlineState, state.Value);
         }
 
         [HttpGet]
@@ -64,12 +63,6 @@ namespace WaterpumpWeb.Controllers
         {
             DeviceStateModel deviceStateModel = await GetDeviceStateModel(id, maxWaitMillis);
             return View("DeviceState", deviceStateModel);
-        }
-
-        [HttpGet("htmx/countTime")]
-        public IActionResult HtmxCountTime([FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
-        {
-            return View("CountTime", new CountTimeModel(from, to));
         }
     }
 }

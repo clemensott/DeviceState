@@ -67,7 +67,7 @@ namespace WaterpumpWeb.Services.Devices.Sql
 
         public async Task<Device> GetDevice(string id)
         {
-            const string sql = "SELECT name, is_forever_on, is_on_until, last_values_span, value_name FROM devices WHERE id = @id LIMIT 1";
+            const string sql = "SELECT name, is_forever_on, is_on_until, last_values_span, value_name, last_actor_update FROM devices WHERE id = @id LIMIT 1";
             KeyValuePair<string, object>[] parameters = new[]
             {
                 new KeyValuePair<string, object>("@id", id),
@@ -77,7 +77,7 @@ namespace WaterpumpWeb.Services.Devices.Sql
             return data?.GetDevice();
         }
 
-        public async Task<bool> SetDeviceOnState(string id, DeviceOnState state)
+        public async Task<bool> SetDeviceOnState(string id, DeviceDesiredOnState state)
         {
             const string sql = "UPDATE devices SET is_forever_on = @isForeverOn, is_on_until = @isOnUntil WHERE id = @id;";
 
@@ -90,6 +90,18 @@ namespace WaterpumpWeb.Services.Devices.Sql
 
             int count = await sqlExecuteService.ExecuteNonQueryAsync(sql, parameters);
             return count > 0;
+        }
+
+        public async Task SetLastActorUpdate(string id, DateTime lastActorUpdate)
+        {
+            const string sql = "UPDATE devices SET last_actor_update = @lastActorUpdate WHERE id = @id;";
+            KeyValuePair<string, object>[] parameters = new[]
+            {
+                new KeyValuePair<string, object>("@lastActorUpdate", lastActorUpdate),
+                new KeyValuePair<string, object>("@id", id),
+            };
+
+            await sqlExecuteService.ExecuteNonQueryAsync(sql, parameters);
         }
     }
 }
