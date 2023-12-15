@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using WaterpumpWeb.Extensions.Services;
 using WaterpumpWeb.Models;
 using WaterpumpWeb.Models.Exceptions;
+using WaterpumpWeb.Services.ValueTransformers;
 
 namespace WaterpumpWeb.Services.Devices
 {
@@ -13,13 +14,16 @@ namespace WaterpumpWeb.Services.Devices
         private readonly TimeSpan actorOnlineTolerance;
         private readonly IDevicesEvents devicesEvents;
         private readonly IDeviceRepo deviceRepo;
+        private readonly IValueTransformer valueTransformer;
 
-        public DevicesService(IAppConfiguration appConfiguration, IDevicesEvents devicesEvents, IDeviceRepo deviceRepo)
+        public DevicesService(IAppConfiguration appConfiguration, IDevicesEvents devicesEvents,
+            IDeviceRepo deviceRepo, IValueTransformer valueTransformer)
         {
             defaultDeviceId = appConfiguration.DefaultDeviceId;
             actorOnlineTolerance = appConfiguration.ActorOnlineTolerance;
             this.devicesEvents = devicesEvents;
             this.deviceRepo = deviceRepo;
+            this.valueTransformer = valueTransformer;
         }
 
         public async Task<TimeSpan?> GetRemainingOnTime(string id)
@@ -58,7 +62,7 @@ namespace WaterpumpWeb.Services.Devices
             if (measurementValues.Length > 0)
             {
                 double averageValue = measurementValues.Average();
-                transformedValue = TemperatureConverter.Convert(device.ValueName, averageValue);
+                transformedValue = valueTransformer.Transform(device.ValueName, averageValue);
             }
             else transformedValue = TransformedValue.Empty(device.ValueName);
 
