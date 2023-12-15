@@ -13,14 +13,7 @@
 #include <ESP8266HTTPClient.h>
 
 #include <WiFiClient.h>
-
-#ifndef STASSID
-#define STASSID "Ottspot"
-#define STAPSK  "PASSWORD"
-#define IP "10.0.0.90"
-#define HOSTNAME "nas-server"
-#define ID "57"
-#endif
+#include "env.h"
 
 const int btnPin = 13;
 const int ledPin = 14;
@@ -68,7 +61,7 @@ void loop() {
     Serial.println("Try turn off");
 
     String endpoint = "on?id=";
-    endpoint += ID;
+    endpoint += DEVICE_ID;
     endpoint += "&millis=0";
 
     if (trySendRequest(endpoint, 20)) Serial.println("Turned off");
@@ -85,7 +78,7 @@ void loop() {
     Serial.println("Try turn on");
 
     String endpoint = "on?id=";
-    endpoint += ID;
+    endpoint += DEVICE_ID;
     endpoint += "&millis=-1";
     
     if (trySendRequest(endpoint, 20)) Serial.println("Turned on");

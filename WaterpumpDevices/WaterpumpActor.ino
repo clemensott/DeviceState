@@ -13,20 +13,14 @@
 #include <ESP8266HTTPClient.h>
 
 #include <WiFiClient.h>
+#include "env.h"
 
-#ifndef STASSID
-#define STASSID "Ottspot"
-#define STAPSK  "PASSWORD"
-#define IP "10.0.0.90"
-#define HOSTNAME "nas-server"
-#endif
-
-const int id = 96;
 const int relayPin = 5;
 const int tempPin = A0;
 const long maxErrorCount = 15;
 
 long errorCount;
+long startRoundMillis;
 
 ESP8266WiFiMulti WiFiMulti;
 
@@ -56,6 +50,8 @@ void setup() {
 }
 
 void loop() {
+  startRoundMillis = millis();
+
   // wait for WiFi connection
   if ((WiFiMulti.run() == WL_CONNECTED)) {
 
@@ -66,14 +62,15 @@ void loop() {
     // simplist way to implement call server via IP and Hostname
     if (errorCount % 2 == 0) url += IP;
     else url += HOSTNAME;
-    url += "/wasserpumpe/ison?id=";
-    url += String(id, DEC);
+    url += "/device/ison?id=";
+    url += DEVICE_ID;
     url += "&errors=";
     url += String(errorCount, DEC);
     url += "&state=";
     url += String(digitalRead(relayPin), DEC);
-    url += "&temp=";
+    url += "&value=";
     url += String(analogRead(tempPin), DEC);
+    url += "&maxWaitMillis=10000";
 
     Serial.println("[HTTP] begin...");
     Serial.println(url);
@@ -126,5 +123,7 @@ void loop() {
   Serial.print("Pump: ");
   Serial.println(digitalRead(relayPin));
 
-  delay(1000);
+  if (millis() - startRoundMillis < 1000) {
+    delay(1000);
+  }
 }
