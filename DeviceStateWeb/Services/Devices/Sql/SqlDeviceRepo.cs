@@ -67,7 +67,9 @@ namespace DeviceStateWeb.Services.Devices.Sql
 
         public async Task<Device> GetDevice(string id)
         {
-            const string sql = "SELECT name, is_forever_on, is_on_until, last_values_span, value_name, last_actor_update FROM devices WHERE id = @id LIMIT 1";
+            const string sql = 
+                "SELECT name, is_forever_on, is_on_until, default_on_time, last_values_span, value_name, last_actor_update " +
+                "FROM devices WHERE id = @id LIMIT 1";
             KeyValuePair<string, object>[] parameters = new[]
             {
                 new KeyValuePair<string, object>("@id", id),

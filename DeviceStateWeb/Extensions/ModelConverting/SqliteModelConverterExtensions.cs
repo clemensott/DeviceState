@@ -11,11 +11,12 @@ namespace DeviceStateWeb.Extensions.ModelConverting
             string name = GetStringValue(record, "name");
             bool isForeverOn = GetBooleanValue(record, "is_forever_on");
             DateTime onUntil = GetDateTimeValue(record, "is_on_until");
+            TimeSpan defaultOnTime = GetTimeSpanValue(record, "default_on_time");
             TimeSpan lastValuesSpan = GetTimeSpanValue(record, "last_values_span");
             string valueName = GetStringValue(record, "value_name");
             DateTime? lastActorUpdate = GetDateTimeNullableValue(record, "last_actor_update");
 
-            return new Device(name, isForeverOn, onUntil, lastValuesSpan, valueName, lastActorUpdate);
+            return new Device(name, isForeverOn, onUntil, defaultOnTime, lastValuesSpan, valueName, lastActorUpdate);
         }
 
         public static DeviceMeasurement GetDeviceMeasurement(this IDataRecord record)

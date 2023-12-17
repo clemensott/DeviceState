@@ -6,7 +6,7 @@ namespace DeviceStateWeb.Services.Devices
 {
     public interface IDevicesService
     {
-        Task TurnOn(string id, double? millis, double? time);
+        Task TurnOn(string id, double? millis, double? minutes, bool defaultTime);
 
         Task TurnOff(string id);
 
@@ -15,5 +15,7 @@ namespace DeviceStateWeb.Services.Devices
         Task<TimeSpan?> GetRemainingOnTime(string id);
 
         Task<DeviceState> GetState(string id, TimeSpan? maxWaitTime);
+
+        Task<Device> GetDevice(string id);
     }
 }

@@ -18,11 +18,12 @@ namespace DeviceStateWeb.Controllers
         }
 
         [HttpGet("on")]
-        public async Task<ActionResult> TurnOn([FromQuery] string id, [FromQuery] double? millis, [FromQuery] double? time)
+        public async Task<ActionResult> TurnOn([FromQuery] string id, [FromQuery] double? millis,
+            [FromQuery] double? minutes, [FromQuery] bool defaultTime)
         {
             try
             {
-                await deviceService.TurnOn(id, millis, time);
+                await deviceService.TurnOn(id, millis, minutes, defaultTime);
 
                 return Ok();
             }

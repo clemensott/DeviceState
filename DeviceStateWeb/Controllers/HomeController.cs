@@ -47,7 +47,8 @@ namespace DeviceStateWeb.Controllers
             try
             {
                 DeviceStateModel deviceStateModel = await GetDeviceStateModel(deviceId, null);
-                DeviceTurnOnOffModel deviceTurnOnOffModel = new DeviceTurnOnOffModel(5);
+                Device device = await devicesService.GetDevice(deviceId);
+                DeviceTurnOnOffModel deviceTurnOnOffModel = new DeviceTurnOnOffModel(device.DefaultOnTime.Minutes);
                 HomeModel homeModel = new HomeModel(deviceStateModel, deviceTurnOnOffModel);
                 return View(homeModel);
             }

@@ -26,6 +26,13 @@ namespace DeviceStateWeb.Services.Devices
             this.valueTransformer = valueTransformer;
         }
 
+        public Task<Device> GetDevice(string id)
+        {
+            id ??= defaultDeviceId;
+
+            return deviceRepo.GetDevice(id);
+        }
+
         public async Task<TimeSpan?> GetRemainingOnTime(string id)
         {
             id ??= defaultDeviceId;
@@ -103,7 +110,7 @@ namespace DeviceStateWeb.Services.Devices
             devicesEvents.TriggerStateChange(id);
         }
 
-        public async Task TurnOn(string id, double? millis, double? minutes)
+        public async Task TurnOn(string id, double? millis, double? minutes, bool defaultTime)
         {
             id ??= defaultDeviceId;
 
@@ -117,6 +124,11 @@ namespace DeviceStateWeb.Services.Devices
             {
                 TimeSpan onTime = millis < 0 ? TimeSpan.Zero : TimeSpan.FromMinutes(minutes.Value);
                 onState = new DeviceDesiredOnState(false, DateTime.UtcNow + onTime);
+            }
+            else if (defaultTime)
+            {
+                Device device = await deviceRepo.GetDevice(id);
+                onState = new DeviceDesiredOnState(false, DateTime.UtcNow + device.DefaultOnTime);
             }
             else onState = new DeviceDesiredOnState(true, DateTime.MaxValue);
 
