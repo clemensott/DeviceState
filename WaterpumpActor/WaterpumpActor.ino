@@ -62,7 +62,7 @@ void loop() {
     // simplist way to implement call server via IP and Hostname
     if (errorCount % 2 == 0) url += IP;
     else url += HOSTNAME;
-    url += "/device/ison?id=";
+    url += "/api/device/ison?id=";
     url += DEVICE_ID;
     url += "&errors=";
     url += String(errorCount, DEC);
@@ -77,6 +77,7 @@ void loop() {
 
     if (http.begin(client, url)) { // HTTP
       Serial.print("[HTTP] GET...\n");
+      http.setTimeout(20000);
       // start connection and send HTTP header
       int httpCode = http.GET();
 
@@ -123,7 +124,7 @@ void loop() {
   Serial.print("Pump: ");
   Serial.println(digitalRead(relayPin));
 
-  if (millis() - startRoundMillis < 1000) {
+  if (millis() - startRoundMillis < 300) {
     delay(1000);
   }
 }

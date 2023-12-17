@@ -60,7 +60,7 @@ void loop() {
     digitalWrite(ledPin, HIGH);
     Serial.println("Try turn off");
 
-    String endpoint = "of?id=";
+    String endpoint = "/device/off?id=";
     endpoint += DEVICE_ID;
 
     if (trySendRequest(endpoint, 20)) Serial.println("Turned off");
@@ -76,7 +76,7 @@ void loop() {
     digitalWrite(ledPin, HIGH);
     Serial.println("Try turn on");
 
-    String endpoint = "on?id=";
+    String endpoint = "/device/on?id=";
     endpoint += DEVICE_ID;
     endpoint += "&defaultTime=true";
     
@@ -104,7 +104,7 @@ bool sendRequestSuccessful(String host, String endpoint) {
   HTTPClient http;
   String url = "http://";
   url += host;
-  url += "/wasserpumpe/";
+  url += "/api";
   url += endpoint;
   Serial.println(url);
 
