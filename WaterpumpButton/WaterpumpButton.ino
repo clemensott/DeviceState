@@ -60,9 +60,8 @@ void loop() {
     digitalWrite(ledPin, HIGH);
     Serial.println("Try turn off");
 
-    String endpoint = "on?id=";
+    String endpoint = "of?id=";
     endpoint += DEVICE_ID;
-    endpoint += "&millis=0";
 
     if (trySendRequest(endpoint, 20)) Serial.println("Turned off");
     else Serial.println("Not turned off");
@@ -79,7 +78,7 @@ void loop() {
 
     String endpoint = "on?id=";
     endpoint += DEVICE_ID;
-    endpoint += "&millis=-1";
+    endpoint += "&defaultTime=true";
     
     if (trySendRequest(endpoint, 20)) Serial.println("Turned on");
     else Serial.println("Not turned on");
