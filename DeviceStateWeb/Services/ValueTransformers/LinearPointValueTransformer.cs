@@ -62,7 +62,7 @@ namespace DeviceStateWeb.Services.ValueTransformers
             MapPoint beforePoint = tempPoints.Last(t => t.Value <= value);
             MapPoint afterPoint = tempPoints.First(t => t.Value > value);
             double relMeasure = (value - beforePoint.Value) / (afterPoint.Value - beforePoint.Value);
-            double resultValue = (afterPoint.Value - beforePoint.Value) * relMeasure + beforePoint.Value;
+            double resultValue = (afterPoint.Value - beforePoint.Value) * relMeasure + beforePoint.Result;
 
             return TransformedValue.FromValue(name, resultValue);
         }
