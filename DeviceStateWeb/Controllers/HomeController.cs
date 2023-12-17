@@ -15,6 +15,9 @@ namespace DeviceStateWeb.Controllers
         private readonly IDevicesService devicesService;
 
         [ViewData]
+        public string Title { get; private set; }
+
+        [ViewData]
         public HtmlBackground Background { get; }
 
         public HomeController(IDevicesService devicesService)
@@ -50,6 +53,8 @@ namespace DeviceStateWeb.Controllers
                 Device device = await devicesService.GetDevice(deviceId);
                 DeviceTurnOnOffModel deviceTurnOnOffModel = new DeviceTurnOnOffModel(device.DefaultOnTime.Minutes);
                 HomeModel homeModel = new HomeModel(deviceStateModel, deviceTurnOnOffModel);
+
+                Title = device.Name;
                 return View(homeModel);
             }
             catch (DeviceNotFoundException e)
