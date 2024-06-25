@@ -55,7 +55,7 @@
 
         function updateContent() {
             const millis = getMillis();
-            content.innerText = formatTimeSpan(millis);
+            content.innerText = millis > 0 ? formatTimeSpan(millis) : "";
             return millis > 0;
         }
 
