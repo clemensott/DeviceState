@@ -15,6 +15,11 @@
     <None Include="wwwroot\favicon.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\vendors\bootstrap\" />
+    <Folder Include="wwwroot\vendors\htmx\" />
+  </ItemGroup>
+
   <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
     <ItemGroup>
       <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
