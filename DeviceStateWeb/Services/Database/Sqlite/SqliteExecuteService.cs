@@ -11,6 +11,7 @@ namespace DeviceStateWeb.Services.Database.Sqlite
     {
         private readonly string dbConnectionString;
         private SqliteConnection connection;
+        private DateTime lastConnectionOpen = DateTime.MinValue;
 
         public SqliteExecuteService(IAppConfiguration appConfiguration)
         {
@@ -19,11 +20,14 @@ namespace DeviceStateWeb.Services.Database.Sqlite
 
         private async Task<SqliteCommand> GetCommand(string sql, IEnumerable<KeyValuePair<string, object>> parameters)
         {
-            if (connection == null || connection.State == ConnectionState.Closed)
+            if (connection == null
+                || connection.State == ConnectionState.Closed
+                || DateTime.UtcNow - lastConnectionOpen > TimeSpan.FromHours(1))
             {
                 connection?.Close();
                 connection = new SqliteConnection(dbConnectionString);
                 await connection.OpenAsync();
+                lastConnectionOpen = DateTime.UtcNow;
             }
 
             SqliteCommand command = connection.CreateCommand();
