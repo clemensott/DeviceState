@@ -52,11 +52,11 @@ namespace DeviceStateWeb.Services.ValueTransformers
 
             if (!tempPoints.Any(t => t.Value <= value))
             {
-                return TransformedValue.FromSmallerThan(name, tempPoints.Min(t => t.Value));
+                return TransformedValue.FromSmallerThan(name, tempPoints.Min(t => t.Result));
             }
             if (!tempPoints.Any(t => t.Value > value))
             {
-                return TransformedValue.FromGreaterThan(name, tempPoints.Max(t => t.Value));
+                return TransformedValue.FromGreaterThan(name, tempPoints.Max(t => t.Result));
             }
 
             MapPoint beforePoint = tempPoints.Last(t => t.Value <= value);
