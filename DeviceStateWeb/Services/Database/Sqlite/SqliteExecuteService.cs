@@ -24,7 +24,11 @@ namespace DeviceStateWeb.Services.Database.Sqlite
                 || connection.State == ConnectionState.Closed
                 || DateTime.UtcNow - lastConnectionOpen > TimeSpan.FromHours(1))
             {
-                connection?.Close();
+                try
+                {
+                    connection?.Close();
+                } catch { }
+
                 connection = new SqliteConnection(dbConnectionString);
                 await connection.OpenAsync();
                 lastConnectionOpen = DateTime.UtcNow;
