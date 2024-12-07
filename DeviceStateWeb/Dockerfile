@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/sdk:6.0 as builder
+﻿FROM mcr.microsoft.com/dotnet/sdk:8.0 as builder
 
 WORKDIR /app
 COPY . .
@@ -6,7 +6,7 @@ COPY . .
 RUN dotnet publish "DeviceStateWeb.csproj" -c Release -o /app/publish
 
 
-FROM mcr.microsoft.com/dotnet/aspnet:6.0 as runner
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 as runner
 
 WORKDIR /app
 COPY --from=builder /app/publish .
