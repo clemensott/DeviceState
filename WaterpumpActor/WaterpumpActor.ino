@@ -70,7 +70,7 @@ void loop() {
     url += String(digitalRead(relayPin), DEC);
     url += "&value=";
     url += String(analogRead(tempPin), DEC);
-    url += "&maxWaitMillis=10000";
+    url += "&maxWaitMillis=19000";
 
     Serial.println("[HTTP] begin...");
     Serial.println(url);
@@ -91,11 +91,11 @@ void loop() {
           String payload = http.getString();
           Serial.println(payload);
 
-          if (payload == "True") {
+          if (payload.indexOf("True") >= 0) {
             digitalWrite(relayPin, HIGH);
             errorCount = 0;
           }
-          else if (payload == "False") {
+          else if (payload.indexOf("False") >= 0) {
             digitalWrite(relayPin, LOW);
             errorCount = 0;
           }

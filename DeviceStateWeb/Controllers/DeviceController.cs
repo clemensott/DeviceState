@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using DeviceStateWeb.Models;
 using DeviceStateWeb.Models.Exceptions;
 using DeviceStateWeb.Services.Devices;
+using Microsoft.AspNetCore.Http;
+using System.Net;
 
 namespace DeviceStateWeb.Controllers
 {
@@ -49,19 +51,29 @@ namespace DeviceStateWeb.Controllers
         }
 
         [HttpGet("ison")]
-        public async Task<ActionResult<string>> GetIsOn(string id = null, int? errors = null, 
+        public async Task GetIsOn(string id = null, int? errors = null,
             int? state = null, int? value = null, int? maxWaitMillis = null)
         {
             try
             {
+                Console.WriteLine($"GetIsOn1: id={id} errors={errors} state={state} value={value} maxWaitMillis={maxWaitMillis}");
                 TimeSpan? maxWaitTime = maxWaitMillis.HasValue ? TimeSpan.FromMilliseconds(maxWaitMillis.Value) : null;
-                bool response = await deviceService.SetMeasurements(id, errors, state, value, maxWaitTime);
+                Task<bool> task = deviceService.SetMeasurements(id, errors, state, value, maxWaitTime);
 
-                return response.ToString();
+                Response.StatusCode = (int)HttpStatusCode.OK;
+                while (!task.IsCompleted) {
+                    await Response.WriteAsync(".");
+                    await Task.Delay(100);
+                }
+
+                bool response = await task;
+                Console.WriteLine($"GetIsOn2: aborted={HttpContext.RequestAborted.IsCancellationRequested} response={response}");
+
+                await Response.WriteAsync(response.ToString());
             }
             catch (DeviceNotFoundException)
             {
-                return NotFound();
+                Response.StatusCode = (int)HttpStatusCode.NotFound;
             }
         }
 
