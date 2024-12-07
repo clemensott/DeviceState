@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using DeviceStateWeb.Models;
 
@@ -10,7 +11,7 @@ namespace DeviceStateWeb.Services.Devices
 
         Task TurnOff(string id);
 
-        Task<bool> SetMeasurements(string id, int? errors, int? state, int? value, TimeSpan? maxWaitTime);
+        Task<bool> SetMeasurements(string id, int? errors, int? state, int? value, TimeSpan? maxWaitTime, CancellationToken cancellationToken);
 
         Task<TimeSpan?> GetRemainingOnTime(string id);
 

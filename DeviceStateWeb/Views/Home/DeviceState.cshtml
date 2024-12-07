@@ -3,7 +3,7 @@
 @model DeviceStateModel
 @{
     DateTime now = DateTime.UtcNow;
-    DeviceActorOnline actorOnline = Model.ActoOnline;
+    DeviceActorOnline actorOnline = Model.ActorOnline;
 
     string statusText;
     string statusColor;
@@ -46,8 +46,8 @@
     }
 }
 
-<div hx-get="/htmx/deviceState?id=@Model.Id&maxWaitMillis=9500"
-     hx-trigger="load delay:50ms"
+<div hx-get="/htmx/deviceState?id=@Model.Id&maxWaitMillis=25000"
+     hx-trigger="every 50ms"
      hx-swap="outerHTML">
     <h1 class="status" style="color: @statusColor;">@statusText</h1>
     <h2 class="update">

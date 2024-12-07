@@ -58,7 +58,7 @@ namespace DeviceStateWeb.Controllers
             {
                 Console.WriteLine($"GetIsOn1: id={id} errors={errors} state={state} value={value} maxWaitMillis={maxWaitMillis}");
                 TimeSpan? maxWaitTime = maxWaitMillis.HasValue ? TimeSpan.FromMilliseconds(maxWaitMillis.Value) : null;
-                Task<bool> task = deviceService.SetMeasurements(id, errors, state, value, maxWaitTime);
+                Task<bool> task = deviceService.SetMeasurements(id, errors, state, value, maxWaitTime, HttpContext.RequestAborted);
 
                 Response.StatusCode = (int)HttpStatusCode.OK;
                 while (!task.IsCompleted) {

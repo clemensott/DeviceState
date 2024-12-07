@@ -30,7 +30,7 @@ namespace DeviceStateWeb.Controllers
         {
             TimeSpan? maxWaitTime = maxWaitMillis.HasValue ? TimeSpan.FromMilliseconds(maxWaitMillis.Value) : null;
             DeviceState state = await devicesService.GetState(id, maxWaitTime);
-            return new DeviceStateModel(state.Id, state.Name, state.OnState, state.ActoOnlineState, state.Value);
+            return new DeviceStateModel(state.Id, state.Name, state.OnState, state.ActorOnlineState, state.Value);
         }
 
         [HttpGet]

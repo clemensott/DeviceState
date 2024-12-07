@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using DeviceStateWeb.Models;
 
@@ -42,7 +43,7 @@ namespace DeviceStateWeb.Services.Devices
             return task.IsCompleted;
         }
 
-        public async Task<bool> ActorWaitForStateChange(string deviceId, TimeSpan maxWaitTime)
+        public async Task<bool> ActorWaitForStateChange(string deviceId, TimeSpan maxWaitTime, CancellationToken cancellationToken)
         {
             lastActorUpdates[deviceId] = DateTime.UtcNow;
             TriggerStateChange(deviceId);
@@ -56,7 +57,7 @@ namespace DeviceStateWeb.Services.Devices
             }
 
             Task task = source.Task;
-            await Task.WhenAny(task, Task.Delay(maxWaitTime));
+            await Task.WhenAny(task, Task.Delay(maxWaitTime, cancellationToken));
 
             actorWaits.Remove(deviceId);
             lastActorUpdates[deviceId] = DateTime.UtcNow;

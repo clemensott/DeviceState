@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DeviceStateWeb.Extensions.Services;
 using DeviceStateWeb.Models;
@@ -41,28 +42,42 @@ namespace DeviceStateWeb.Services.Devices
             return device.GetRemaining();
         }
 
-        public async Task<DeviceState> GetState(string id, TimeSpan? maxWaitTime)
+        private async Task<DeviceActorOnline> GetIsActorOnline(string id, TimeSpan? maxWaitTime)
         {
-            id ??= defaultDeviceId;
-
+            DeviceActorOnline actorOnline = devicesEvents.GetLastActorUpdate(id);
             if (maxWaitTime.HasValue)
             {
-                await devicesEvents.WaitForStateChange(id, maxWaitTime.Value);
+                Task waitTask = devicesEvents.WaitForStateChange(id, maxWaitTime.Value);
+                while (!waitTask.IsCompleted)
+                {
+                    DateTime delayUntil = (actorOnline.LastUpdate ?? DateTime.UtcNow) + actorOnlineTolerance;
+                    TimeSpan delay = delayUntil - DateTime.UtcNow;
+                    if (delay > TimeSpan.Zero) await Task.WhenAny(waitTask, Task.Delay(delay));
+                    else await waitTask;
+
+                    actorOnline = devicesEvents.GetLastActorUpdate(id);
+                    if (!actorOnline.IsOnline) break;
+                }
             }
 
-            Device device = await deviceRepo.GetDevice(id);
-            if (device == null) throw new DeviceNotFoundException(id);
-
-            DeviceMeasurement[] measurements = await deviceRepo.GetMeasurements(id, device.LastValuesSpan);
-
-            int? lastState = measurements.FirstOrDefault(m => m.State.HasValue).State;
-            bool? isOn = lastState.HasValue ? lastState == 1 : null;
-
-            DeviceActorOnline actorOnline = devicesEvents.GetLastActorUpdate(id);
+            Device device = await deviceRepo.GetDevice(id) ?? throw new DeviceNotFoundException(id);
             DateTime? actorOnlineLastUpdate = actorOnline.LastUpdate ?? device.LasteActorUpdate;
             bool actorIsOnline = actorOnline.IsOnline || (actorOnlineLastUpdate.HasValue
                 && DateTime.UtcNow - actorOnlineLastUpdate < actorOnlineTolerance);
             actorOnline = new DeviceActorOnline(actorIsOnline, actorOnlineLastUpdate);
+            return actorOnline;
+        }
+
+        public async Task<DeviceState> GetState(string id, TimeSpan? maxWaitTime)
+        {
+            id ??= defaultDeviceId;
+
+            DeviceActorOnline actorOnline = await GetIsActorOnline(id, maxWaitTime);
+            Device device = await deviceRepo.GetDevice(id) ?? throw new DeviceNotFoundException(id);
+            DeviceMeasurement[] measurements = await deviceRepo.GetMeasurements(id, device.LastValuesSpan);
+
+            int? lastState = measurements.FirstOrDefault(m => m.State.HasValue).State;
+            bool? isOn = lastState.HasValue ? lastState == 1 : null;
 
             double[] measurementValues = measurements.Select(m => m.Value).OfType<double>().ToArray();
             TransformedValue transformedValue;
@@ -77,7 +92,8 @@ namespace DeviceStateWeb.Services.Devices
             return new DeviceState(id, device.Name, onState, actorOnline, transformedValue);
         }
 
-        public async Task<bool> SetMeasurements(string id, int? errors, int? state, int? value, TimeSpan? maxWaitTime)
+        public async Task<bool> SetMeasurements(string id, int? errors, int? state, int? value,
+            TimeSpan? maxWaitTime, CancellationToken cancellationToken)
         {
             id ??= defaultDeviceId;
 
@@ -90,7 +106,7 @@ namespace DeviceStateWeb.Services.Devices
             bool isOn = device.IsOn();
             if (state.HasValue && (state == 0) ^ isOn && maxWaitTime.HasValue)
             {
-                if (await devicesEvents.ActorWaitForStateChange(id, maxWaitTime.Value))
+                if (await devicesEvents.ActorWaitForStateChange(id, maxWaitTime.Value, cancellationToken))
                 {
                     device = await deviceRepo.GetDevice(id);
                     isOn = device.IsOn();

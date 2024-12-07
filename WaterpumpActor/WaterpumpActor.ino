@@ -77,7 +77,7 @@ void loop() {
 
     if (http.begin(client, url)) { // HTTP
       Serial.print("[HTTP] GET...\n");
-      http.setTimeout(20000);
+      http.setTimeout(1000);
       // start connection and send HTTP header
       int httpCode = http.GET();
 
